@@ -20,7 +20,7 @@ class HTMLNode():
         if self.tag != other.tag or self.value != other.value or self.props != other.props:
             return False
         if self.children is not None:
-            for i in range(self.children):
+            for i in range(len(self.children)):
                 if self.children[i] != other.children[i]:
                     return False
         return True
