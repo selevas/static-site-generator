@@ -20,3 +20,7 @@ class TestLeafNode(unittest.TestCase):
         self.assertEqual(node.to_html(), '<a href="https://selevas.com">Staff Profile</a>')
         self.assertEqual(node2.to_html(), '<a href="https://selevas.com" target="_blank">Management Profile</a>')
 
+    def test_to_html_no_tag(self):
+        node = LeafNode(tag=None, value="Anyone else feel a breeze in here?")
+        self.assertEqual(node.to_html(), "Anyone else feel a breeze in here?")
+
