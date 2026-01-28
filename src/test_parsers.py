@@ -3,7 +3,7 @@ import unittest
 from parsers import split_nodes_delimiter
 from textnode import TextType, TextNode
 
-class TestParsers(unittest.TestCase):
+class TestSplitNodesDelimiter(unittest.TestCase):
     def test_plain(self):
         nodes = [TextNode("Hello world!", TextType.TEXT)]
         new_nodes = split_nodes_delimiter(nodes, '`', TextType.CODE)
