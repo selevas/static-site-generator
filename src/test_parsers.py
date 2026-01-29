@@ -1,6 +1,6 @@
 import unittest
 
-from parsers import split_nodes_delimiter
+from parsers import split_nodes_delimiter, extract_markdown_images, extract_markdown_links
 from textnode import TextType, TextNode
 
 class TestSplitNodesDelimiter(unittest.TestCase):
@@ -79,4 +79,60 @@ class TestSplitNodesDelimiter(unittest.TestCase):
         self.assertEqual(new_nodes[0].text_type, TextType.TEXT)
         self.assertEqual(new_nodes[1].text, "world!")
         self.assertEqual(new_nodes[1].text_type, TextType.TEXT)
+
+
+class TestExtractMarkdownImages(unittest.TestCase):
+    def test_extract_images_none(self):
+        text = "No images here, sorry! :("
+        self.assertListEqual(extract_markdown_images(text), [])
+
+    def test_extract_images_simple(self):
+        text = "My cat... ![my cat, Fluffers!](https://coolcats.com/fluffers) ...Fluffers!"
+        self.assertListEqual(extract_markdown_images(text), [
+            ("my cat, Fluffers!", "https://coolcats.com/fluffers"),
+        ])
+
+    def test_extract_images_multiple(self):
+        text = "My pets... ![my cat, Fluffers!](https://coolcats.com/fluffers) Fluffers and ![my dog, Tony!](https://cooldogs.com/tony) Tony!"
+        self.assertListEqual(extract_markdown_images(text), [
+            ("my cat, Fluffers!", "https://coolcats.com/fluffers"),
+            ("my dog, Tony!", "https://cooldogs.com/tony"),
+        ])
+
+    def test_extract_images_malformed(self):
+        text1 = "My cat... !(my cat, Fluffers!)[https://coolcats.com/fluffers] ...Fluffers!"
+        text2 = "My cat... ![my cat, Fluffers!](https://coolcats.com/fluffers] ...Fluffers!"
+        text3 = "My cat... ![my cat, Fluffers!(https://coolcats.com/fluffers)] ...Fluffers!"
+        text4 = "My cat... [my cat, Fluffers!(https://coolcats.com/fluffers)] ...Fluffers!"
+        self.assertListEqual(extract_markdown_images(text1), [])
+        self.assertListEqual(extract_markdown_images(text2), [])
+        self.assertListEqual(extract_markdown_images(text3), [])
+        self.assertListEqual(extract_markdown_images(text4), [])
+
+
+class TestExtractMarkdownLinks(unittest.TestCase):
+    def test_extract_links_none(self):
+        text = "No links here, sorry! :("
+        self.assertListEqual(extract_markdown_links(text), [])
+
+    def test_extract_links_simple(self):
+        text = "[Click here](https://coolcats.com/fluffers) to go to the blog for my cat, Fluffers!"
+        self.assertListEqual(extract_markdown_links(text), [
+            ("Click here", "https://coolcats.com/fluffers"),
+        ])
+
+    def test_extract_links_multiple(self):
+        text = "Check out the blogs for [my cat, Fluffers](https://coolcats.com/fluffers) and [my dog, Tony](https://cooldogs.com/tony)!"
+        self.assertListEqual(extract_markdown_links(text), [
+            ("my cat, Fluffers", "https://coolcats.com/fluffers"),
+            ("my dog, Tony", "https://cooldogs.com/tony"),
+        ])
+
+    def test_extract_links_malformed(self):
+        text1 = "(Click here)[https://coolcats.com/fluffers] to go to the blog for my cat, Fluffers!"
+        text2 = "[Click here](https://coolcats.com/fluffers] to go to the blog for my cat, Fluffers!"
+        text3 = "[Click here(https://coolcats.com/fluffers)] to go to the blog for my cat, Fluffers!"
+        self.assertListEqual(extract_markdown_links(text1), [])
+        self.assertListEqual(extract_markdown_links(text2), [])
+        self.assertListEqual(extract_markdown_links(text3), [])
 
