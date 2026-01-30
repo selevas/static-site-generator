@@ -1,6 +1,6 @@
 import unittest
 
-from parsers import split_nodes_delimiter, extract_markdown_images, extract_markdown_links
+from parsers import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link
 from textnode import TextType, TextNode
 
 class TestSplitNodesDelimiter(unittest.TestCase):
@@ -135,4 +135,73 @@ class TestExtractMarkdownLinks(unittest.TestCase):
         self.assertListEqual(extract_markdown_links(text1), [])
         self.assertListEqual(extract_markdown_links(text2), [])
         self.assertListEqual(extract_markdown_links(text3), [])
+
+
+class TestSplitMarkdownImages(unittest.TestCase):
+    def test_split_images_none(self):
+        nodes = [TextNode("No images here, sorry! :(", TextType.TEXT)]
+        self.assertListEqual(split_nodes_image(nodes), [
+            TextNode("No images here, sorry! :(", TextType.TEXT),
+        ])
+
+    def test_split_images_simple(self):
+        nodes = [TextNode("My cat... ![my cat, Fluffers!](https://coolcats.com/fluffers) ...Fluffers!", TextType.TEXT)]
+        self.assertListEqual(split_nodes_image(nodes), [
+            TextNode("My cat... ", TextType.TEXT),
+            TextNode("my cat, Fluffers!", TextType.IMAGE, "https://coolcats.com/fluffers"),
+            TextNode(" ...Fluffers!", TextType.TEXT),
+        ])
+
+    def test_split_links_multiple(self):
+        nodes = [TextNode("My pets... ![my cat, Fluffers!](https://coolcats.com/fluffers) Fluffers and ![my dog, Tony!](https://cooldogs.com/tony) Tony!", TextType.TEXT)]
+        self.assertListEqual(split_nodes_image(nodes), [
+            TextNode("My pets... ", TextType.TEXT),
+            TextNode("my cat, Fluffers!", TextType.IMAGE, "https://coolcats.com/fluffers"),
+            TextNode(" Fluffers and ", TextType.TEXT),
+            TextNode("my dog, Tony!", TextType.IMAGE, "https://cooldogs.com/tony"),
+            TextNode(" Tony!", TextType.TEXT),
+        ])
+
+    def test_split_links_malformed(self):
+        nodes1 = [TextNode("My cat... !(my cat, Fluffers!)[https://coolcats.com/fluffers] ...Fluffers!", TextType.TEXT)]
+        nodes2 = [TextNode("My cat... ![my cat, Fluffers!](https://coolcats.com/fluffers] ...Fluffers!", TextType.TEXT)]
+        nodes3 = [TextNode("My cat... ![my cat, Fluffers!(https://coolcats.com/fluffers)] ...Fluffers!", TextType.TEXT)]
+        nodes4 = [TextNode("My cat... [my cat, Fluffers!(https://coolcats.com/fluffers)] ...Fluffers!", TextType.TEXT)]
+        self.assertListEqual(split_nodes_image(nodes1), [TextNode("My cat... !(my cat, Fluffers!)[https://coolcats.com/fluffers] ...Fluffers!", TextType.TEXT)])
+        self.assertListEqual(split_nodes_image(nodes2), [TextNode("My cat... ![my cat, Fluffers!](https://coolcats.com/fluffers] ...Fluffers!", TextType.TEXT)])
+        self.assertListEqual(split_nodes_image(nodes3), [TextNode("My cat... ![my cat, Fluffers!(https://coolcats.com/fluffers)] ...Fluffers!", TextType.TEXT)])
+        self.assertListEqual(split_nodes_image(nodes4), [TextNode("My cat... [my cat, Fluffers!(https://coolcats.com/fluffers)] ...Fluffers!", TextType.TEXT)])
+
+class TestSplitMarkdownLinks(unittest.TestCase):
+    def test_split_links_none(self):
+        nodes = [TextNode("No links here, sorry! :(", TextType.TEXT)]
+        self.assertListEqual(split_nodes_link(nodes), [
+            TextNode("No links here, sorry! :(", TextType.TEXT),
+        ])
+
+    def test_split_links_simple(self):
+        nodes = [TextNode("[Click here](https://coolcats.com/fluffers) to go to the blog for my cat, Fluffers!", TextType.TEXT)]
+        self.assertListEqual(split_nodes_link(nodes), [
+            TextNode("Click here", TextType.LINK, "https://coolcats.com/fluffers"),
+            TextNode(" to go to the blog for my cat, Fluffers!", TextType.TEXT),
+        ])
+
+    def test_split_links_multiple(self):
+        nodes = [TextNode("Check out the blogs for [my cat, Fluffers](https://coolcats.com/fluffers) and [my dog, Tony](https://cooldogs.com/tony)!", TextType.TEXT)]
+        self.assertListEqual(split_nodes_link(nodes), [
+            TextNode("Check out the blogs for ", TextType.TEXT),
+            TextNode("my cat, Fluffers", TextType.LINK, "https://coolcats.com/fluffers"),
+            TextNode(" and ", TextType.TEXT),
+            TextNode("my dog, Tony", TextType.LINK, "https://cooldogs.com/tony"),
+            TextNode("!", TextType.TEXT),
+        ])
+
+    def test_split_links_malformed(self):
+        nodes1 = [TextNode("(Click here)[https://coolcats.com/fluffers] to go to the blog for my cat, Fluffers!", TextType.TEXT)]
+        nodes2 = [TextNode("[Click here](https://coolcats.com/fluffers] to go to the blog for my cat, Fluffers!", TextType.TEXT)]
+        nodes3 = [TextNode("[Click here(https://coolcats.com/fluffers)] to go to the blog for my cat, Fluffers!", TextType.TEXT)]
+        self.assertListEqual(split_nodes_link(nodes1), [TextNode("(Click here)[https://coolcats.com/fluffers] to go to the blog for my cat, Fluffers!", TextType.TEXT)])
+        self.assertListEqual(split_nodes_link(nodes2), [TextNode("[Click here](https://coolcats.com/fluffers] to go to the blog for my cat, Fluffers!", TextType.TEXT)])
+        self.assertListEqual(split_nodes_link(nodes3), [TextNode("[Click here(https://coolcats.com/fluffers)] to go to the blog for my cat, Fluffers!", TextType.TEXT)])
+
 
