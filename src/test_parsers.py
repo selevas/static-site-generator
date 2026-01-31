@@ -1,6 +1,6 @@
 import unittest
 
-from parsers import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link
+from parsers import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_image, split_nodes_link, text_to_text_nodes
 from textnode import TextType, TextNode
 
 class TestSplitNodesDelimiter(unittest.TestCase):
@@ -204,4 +204,93 @@ class TestSplitMarkdownLinks(unittest.TestCase):
         self.assertListEqual(split_nodes_link(nodes2), [TextNode("[Click here](https://coolcats.com/fluffers] to go to the blog for my cat, Fluffers!", TextType.TEXT)])
         self.assertListEqual(split_nodes_link(nodes3), [TextNode("[Click here(https://coolcats.com/fluffers)] to go to the blog for my cat, Fluffers!", TextType.TEXT)])
 
+
+class TestTextToTextNodes(unittest.TestCase):
+    def test_empty(self):
+        self.assertListEqual(text_to_text_nodes(""), [])
+
+    def test_no_markdown(self):
+        self.assertListEqual(text_to_text_nodes("Hello world!"), [TextNode("Hello world!", TextType.TEXT)])
+
+    def test_only_italic(self):
+        self.assertListEqual(text_to_text_nodes("I have a _big_ dog."), [
+            TextNode("I have a ", TextType.TEXT),
+            TextNode("big", TextType.ITALIC),
+            TextNode(" dog.", TextType.TEXT),
+        ])
+
+    def test_only_bold(self):
+        self.assertListEqual(text_to_text_nodes("I have a *big* dog."), [
+            TextNode("I have a ", TextType.TEXT),
+            TextNode("big", TextType.BOLD),
+            TextNode(" dog.", TextType.TEXT),
+        ])
+
+    def test_only_code(self):
+        self.assertListEqual(text_to_text_nodes("I have a `big` dog."), [
+            TextNode("I have a ", TextType.TEXT),
+            TextNode("big", TextType.CODE),
+            TextNode(" dog.", TextType.TEXT),
+        ])
+
+    def test_only_image(self):
+        self.assertListEqual(text_to_text_nodes("I have a ![big dog](https://selevas.com)."), [
+            TextNode("I have a ", TextType.TEXT),
+            TextNode("big dog", TextType.IMAGE, "https://selevas.com"),
+            TextNode(".", TextType.TEXT),
+        ])
+
+    def test_only_image(self):
+        self.assertListEqual(text_to_text_nodes("I have a [website](https://selevas.com) for my dog!"), [
+            TextNode("I have a ", TextType.TEXT),
+            TextNode("website", TextType.LINK, "https://selevas.com"),
+            TextNode(" for my dog!", TextType.TEXT),
+        ])
+
+    def test_all_conversions(self):
+        self.assertListEqual(text_to_text_nodes("My converter can do _italic_, *bold*, `code`, ![images](https://selevas.com), and [links](https://selevas.com)!"), [
+            TextNode("My converter can do ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(", ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD),
+            TextNode(", ", TextType.TEXT),
+            TextNode("code", TextType.CODE),
+            TextNode(", ", TextType.TEXT),
+            TextNode("images", TextType.IMAGE, "https://selevas.com"),
+            TextNode(", and ", TextType.TEXT),
+            TextNode("links", TextType.LINK, "https://selevas.com"),
+            TextNode("!", TextType.TEXT),
+        ])
+
+    def test_all_conversions_reverse(self):
+        self.assertListEqual(text_to_text_nodes("My converter can do [links](https://selevas.com), ![images](https://selevas.com), `code`, *bold*, and _italic_!"), [
+            TextNode("My converter can do ", TextType.TEXT),
+            TextNode("links", TextType.LINK, "https://selevas.com"),
+            TextNode(", ", TextType.TEXT),
+            TextNode("images", TextType.IMAGE, "https://selevas.com"),
+            TextNode(", ", TextType.TEXT),
+            TextNode("code", TextType.CODE),
+            TextNode(", ", TextType.TEXT),
+            TextNode("bold", TextType.BOLD),
+            TextNode(", and ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode("!", TextType.TEXT),
+        ])
+
+    def test_all_conversions_complex(self):
+        self.assertListEqual(text_to_text_nodes("We`re` a*bo*ut_ to get_ [crazy](https://selevas.com)!***!*_!__!_![!](https://selevas.com)"), [
+            TextNode("We", TextType.TEXT),
+            TextNode("re", TextType.CODE),
+            TextNode(" a", TextType.TEXT),
+            TextNode("bo", TextType.BOLD),
+            TextNode("ut", TextType.TEXT),
+            TextNode(" to get", TextType.ITALIC),
+            TextNode(" ", TextType.TEXT),
+            TextNode("crazy", TextType.LINK, "https://selevas.com"),
+            TextNode("!", TextType.TEXT),
+            TextNode("!", TextType.BOLD),
+            TextNode("!", TextType.ITALIC),
+            TextNode("!", TextType.ITALIC),
+            TextNode("!", TextType.IMAGE, "https://selevas.com"),
+        ])
 
